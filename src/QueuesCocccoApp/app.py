@@ -45,7 +45,15 @@ def get_data():
                 elif row['Status'] == 'On Hold':
                     on_hold += 1
             numbers.append([error, on_hold, ready, in_process, len(data['value'])])
-        
+        #MDMS
+        response = requests.get(bc_mdms_url, auth=HTTPBasicAuth(username, user_password))
+        if response.status_code == 200:
+            data = response.json()
+            for row in data['value']:
+                if row['Status'] == 'Error':
+                #if row['Status'] == 'In Process':
+                    finallist.append(['MDMS', row['Description'], row['Error_Message']])
+                    
         return finallist, numbers
     except Exception as e:
         print(f"Error: {str(e)}")
