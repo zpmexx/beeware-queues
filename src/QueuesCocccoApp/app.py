@@ -4,7 +4,7 @@ App for checking cocco queueus
 
 import toga
 from toga.style import Pack
-from toga.style.pack import COLUMN, ROW, SERIF, BOLD
+from toga.style.pack import COLUMN, ROW, SERIF, BOLD, CENTER
 import requests
 from requests.auth import HTTPBasicAuth
 import os
@@ -62,6 +62,7 @@ def get_data():
 def greeting(name):
     return f"Hello, {name if name else 'stranger'}"
 
+
 class Queueschecker(toga.App):
     def startup(self):
         main_box = toga.Box(style=Pack(direction=COLUMN, padding=10))
@@ -83,9 +84,15 @@ class Queueschecker(toga.App):
         data, numbers = get_data()
         
         if data == 'NoInternet':
-            stats_content = "Problem z odpytaniem, sprawdź połączenie z internetem..."
-            stats_label = self.create_multiline_label(stats_content)
-            self.container.add(stats_label)
+            # stats_content = "Problem z odpytaniem, sprawdź połączenie z internetem..."
+            # stats_label = self.create_multiline_label(stats_content)
+            # self.container.add(stats_label)
+            image_box = toga.Box(style=Pack(direction=COLUMN, alignment=CENTER))
+            image_path = 'resources/net-new.jpg'  # Update the path to your image file
+            image = toga.Image(image_path)
+            image_view = toga.ImageView(image)
+            image_box.add(image_view)
+            self.container.add(image_box)
         else:
             if data:
                 for item in data:
@@ -93,9 +100,16 @@ class Queueschecker(toga.App):
                     label = self.create_multiline_label(text_content)
                     self.container.add(label)
             else:
-                text_content = "Brak błędów - możesz zjeść ciastko"
-                label = self.create_multiline_label(text_content)
-                self.container.add(label)
+                #text_content = "Brak błędów - możesz zjeść ciastko"
+                #label = self.create_multiline_label(text_content)
+                #self.container.add(label)
+                image_box = toga.Box(style=Pack(direction=COLUMN, alignment=CENTER))
+                image_path = 'resources/ez-new.jpg'  # Update the path to your image file
+                image = toga.Image(image_path)
+                image_view = toga.ImageView(image)
+                image_box.add(image_view)
+                self.container.add(image_box)
+
 
             stats_content = f"""Liczba kolejek: {numbers[0][4]}\nLiczba błędów: {numbers[0][0]}\nW trakcie: {numbers[0][3]}\nGotowe: {numbers[0][2]}\nWstrzymane: {numbers[0][1]}"""
             stats_label = toga.MultilineTextInput(readonly=True, value=stats_content, style=Pack(padding=5, height=150, font_size = 12))

@@ -23,7 +23,7 @@ test_sources = [
 requires = ['requests'
 ]
 
-
+icon = "icons/back"
 
 test_requires = [
     "pytest",
