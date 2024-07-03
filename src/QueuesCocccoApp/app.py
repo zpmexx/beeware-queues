@@ -26,6 +26,10 @@ user_password = final_d['user_password']
 url = final_d['url']
 bc_mdms_url = final_d['bc_mdms_url']
 
+mdms_currency = final_d['mdms_currency']
+bc_currency = final_d['bc_currency']
+nbpEurUrl = final_d['nbpEurUrl']
+
 def get_data():
     try:
         finallist = []
@@ -54,7 +58,38 @@ def get_data():
                 #if row['Status'] == 'In Process':
                     finallist.append(['MDMS', row['Description'], row['Error_Message']])
                     
-        return finallist, numbers
+        #NBP
+        response = requests.get(nbpEurUrl, auth=HTTPBasicAuth(username, user_password))
+        if response.status_code == 200:
+            data = response.json()     
+            nbpEur = data['rates'][0]['mid']
+        else:
+            nbpEur = "Problem z odpytaniem strony NBP."
+            
+        #mdms currency
+        response = requests.get(mdms_currency, auth=HTTPBasicAuth(username, user_password))
+        if response.status_code == 200:
+            data = response.json()
+            for line in data['value']:
+                if line['Code'] == 'EUR':
+                    mdms_euro = line['ExchangeRateAmt']
+                    break
+        else:
+            mdms_euro = "Problem z pobraniem EUR MDMS."
+            
+        #mcdrl currency
+        response = requests.get(bc_currency, auth=HTTPBasicAuth(username, user_password))
+        if response.status_code == 200:
+            data = response.json()
+            for line in data['value']:
+                if line['Code'] == 'EUR':
+                    cdrl_euro = line['ExchangeRateAmt']
+                    break
+        else:
+            cdrl_euro = "Problem z pobraniem EUR CDRL."
+        
+    
+        return finallist, numbers, nbpEur, mdms_euro, cdrl_euro
     except Exception as e:
         print(f"Error: {str(e)}")
         return 'NoInternet', 'NoInternet'
@@ -78,10 +113,17 @@ class Queueschecker(toga.App):
         self.main_window = toga.MainWindow(title=self.formal_name)
         self.main_window.content = main_box
         self.main_window.show()
+        
+        screen_width = self.main_window.size[0]
+        screen_height = self.main_window.size[1]
 
     def on_button_click(self, widget):
+        
+        screen_width = self.main_window.size[0]
+        screen_height = self.main_window.size[1]
+        
         self.container.clear()
-        data, numbers = get_data()
+        data, numbers, nbpEur, cdrlEur, mdmsEur = get_data()
         
         if data == 'NoInternet':
             # stats_content = "Problem z odpytaniem, sprawdź połączenie z internetem..."
@@ -90,7 +132,7 @@ class Queueschecker(toga.App):
             image_box = toga.Box(style=Pack(direction=COLUMN, alignment=CENTER))
             image_path = 'resources/net-new.jpg'  # Update the path to your image file
             image = toga.Image(image_path)
-            image_view = toga.ImageView(image)
+            image_view = toga.ImageView(image, style=Pack(width=screen_width * 0.6, height=screen_height * 0.6))
             image_box.add(image_view)
             self.container.add(image_box)
         else:
@@ -99,6 +141,8 @@ class Queueschecker(toga.App):
                     text_content = f"Nazwa: {item[0]}\nOpis: {item[1]}\nBłąd: {item[2]}"
                     label = self.create_multiline_label(text_content)
                     self.container.add(label)
+                    # button = toga.Button(f'Podnieś {item[1]}', on_press=self.print_hello, style=Pack(padding=5))
+                    # self.container.add(button)
             else:
                 #text_content = "Brak błędów - możesz zjeść ciastko"
                 #label = self.create_multiline_label(text_content)
@@ -106,18 +150,37 @@ class Queueschecker(toga.App):
                 image_box = toga.Box(style=Pack(direction=COLUMN, alignment=CENTER))
                 image_path = 'resources/ez-new.jpg'  # Update the path to your image file
                 image = toga.Image(image_path)
-                image_view = toga.ImageView(image)
+                image_view = toga.ImageView(image, style=Pack(width=screen_width * 0.6, height=screen_height * 0.5))
                 image_box.add(image_view)
                 self.container.add(image_box)
 
+            #currency
+            
+            stats_content = f"""Kurs euro NBP: {nbpEur}\nCDRL euro: {cdrlEur}\nMDMS euro: {mdmsEur}\n"""
+            if nbpEur == cdrlEur == mdmsEur:
+                result = 'WSZYSTKO OK'
+            else:
+                result = "NIE ZGADZA SIĘ"
+                
+            stats_content += result
+            stats_label = toga.MultilineTextInput(readonly=True, value=stats_content, style=Pack(padding=5, height=150, font_size = 12))
+            self.container.add(stats_label)
+            
 
+            #queues summary
             stats_content = f"""Liczba kolejek: {numbers[0][4]}\nLiczba błędów: {numbers[0][0]}\nW trakcie: {numbers[0][3]}\nGotowe: {numbers[0][2]}\nWstrzymane: {numbers[0][1]}"""
             stats_label = toga.MultilineTextInput(readonly=True, value=stats_content, style=Pack(padding=5, height=150, font_size = 12))
             self.container.add(stats_label)
+            
+           
 
     def create_multiline_label(self, text):
         multiline_label = toga.MultilineTextInput(readonly=True, value=text, style=Pack(padding=5, height=150, font_size = 10))
         return multiline_label
+    
+    #tutaj dodać puta do kolejki
+    def print_hello(self, widget):
+        print("hello")
 
 def main():
     return Queueschecker()
