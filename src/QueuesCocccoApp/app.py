@@ -92,8 +92,7 @@ def get_data():
         return finallist, numbers, nbpEur, mdms_euro, cdrl_euro
     except Exception as e:
         print(f"Error: {str(e)}")
-        return 'NoInternet', 'NoInternet'
-
+        return 'NoInternet', 'NoInternet', 0,0,0
 def greeting(name):
     return f"Hello, {name if name else 'stranger'}"
 
